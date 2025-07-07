@@ -1,4 +1,4 @@
-Splunk SwiftOnSecurity Configuration
+Splunk SwiftOnSecurity Configuration:
 This project demonstrates how to enhance Windows endpoint visibility by integrating the Sysmon + SwiftOnSecurity configuration into a Splunk detection pipeline. The goal was to validate whether this high-fidelity telemetry setup can reliably detect obfuscated PowerShell execution and surface it clearly in both local logs and Splunk.
 
 🔧 Project Objective
