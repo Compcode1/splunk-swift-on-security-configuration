@@ -1,56 +1,104 @@
-Splunk SwiftOnSecurity Configuration:
-This project demonstrates how to enhance Windows endpoint visibility by integrating the Sysmon + SwiftOnSecurity configuration into a Splunk detection pipeline. The goal was to validate whether this high-fidelity telemetry setup can reliably detect obfuscated PowerShell execution and surface it clearly in both local logs and Splunk.
+Splunk SwiftOnSecurity Configuration: Enhanced Detection via Tuned Sysmon Telemetry
+This project demonstrates how to upgrade Windows host visibility using Sysmon with the SwiftOnSecurity configuration, then validate detection of obfuscated PowerShell execution via local logs and Splunk SIEM. It builds directly on the Cybersecurity Battlefield framework by enhancing the Process Execution and Event Monitoring layers at the host level, while strengthening telemetry flow to the SIEM.
 
-🔧 Project Objective
-Upgrade default Windows telemetry using the community-recommended SwiftOnSecurity Sysmon config, then verify end-to-end visibility by:
-Testing obfuscated PowerShell behavior
-Confirming detection at the endpoint (Sysmon logs)
-Validating successful ingestion and indexing in Splunk
+🎯 Objective
+To replicate a common adversary technique — obfuscated PowerShell execution — and confirm that a professionally tuned Sysmon configuration provides high-fidelity telemetry from the endpoint to Splunk.
+
+🔧 Battlefield Alignment
+Layer	Purpose
+Process Execution	Capture granular process creation and command-line arguments.
+Event Monitoring	Improve detection fidelity with structured Sysmon logging.
+SIEM Ingestion Layer	Route meaningful telemetry to Splunk and confirm indexing.
+
+This tuning strategy reflects real-world SOC practice, where defenders prioritize signal-over-noise and tune telemetry to detect tactics such as Living-Off-the-Land (LOTL), persistence, and privilege escalation.
 
 📂 Project Structure
 swift-on-security-config.ipynb
-Jupyter Notebook that documents all actions, configuration changes, and validation steps taken during the project.
+Jupyter notebook documenting each configuration, execution, and validation step.
+
+Telemetry Sources:
+
+Sysmon logs (Event ID 1 – Process Create)
+
+Splunk (ingesting Microsoft-Windows-Sysmon/Operational)
 
 🛠️ Setup Summary
-Install Sysmon on the Windows 11 host using the SwiftOnSecurity config.
+Sysmon Installation
+Installed Sysmon on Windows 11.
 
-Configure Splunk input to ingest:
+SwiftOnSecurity Configuration
+Downloaded and applied sysmonconfig-export.xml from SwiftOnSecurity GitHub.
 
+sh
+Copy
+Edit
+Sysmon64.exe -c sysmonconfig-export.xml
+Splunk Configuration
+Configured inputs.conf to ingest Sysmon logs:
 
-Microsoft-Windows-Sysmon/Operational
-via inputs.conf:
-
-
+ini
+Copy
+Edit
 [WinEventLog://Microsoft-Windows-Sysmon/Operational]
 disabled = 0
 index = main
 renderXml = true
+Test Attack Simulation
+Ran obfuscated PowerShell to launch Notepad:
 
+powershell
+Copy
+Edit
+powershell.exe -EncodedCommand UwB0AGEAcgB0AC0AUAByAG8AYwBlAHMAcwAgAG4AbwB0AGUAcABhAGQALgBlAHgAZQA=
+✅ Results
+Stage	Outcome
+Sysmon Logging	Full visibility of encoded command-line, process parent, integrity level, and hashes.
+Splunk Ingestion	Event correctly indexed in Splunk with expected sourcetype and searchability.
+Detection Confirmation	Validated using local PowerShell queries and Splunk searches.
 
-Restart Splunk to activate ingestion.
-Run encoded PowerShell command that executes Notepad using:
-powershell -EncodedCommand UwB0AGEAcgB0AC0AUAByAG8AYwBlAHMAcwAgAG4AbwB0AGUAcABhAGQALgBlAHgAZQA=
+🔍 Detection Summary
+Technique Simulated: Obfuscated PowerShell Execution
 
+Telemetry Captured:
 
-Validate telemetry locally with:
-Get-WinEvent -LogName "Microsoft-Windows-Sysmon/Operational" | 
-Where-Object { $_.Id -eq 1 -and $_.Message -like "*notepad.exe*" }
+Full command-line
 
+Parent process relationship
 
+Integrity level and Logon ID
 
-Validate in Splunk using:
-index=main source="WinEventLog:Microsoft-Windows-Sysmon/Operational" "notepad.exe"
+Process hashes and GUIDs
 
+Event ID Logged: Sysmon Event ID 1
 
-✅ Result
-Sysmon Event ID 1 (Process Create) captured the obfuscated PowerShell launch with full command-line detail.
+Splunk Query Example:
 
-Event was successfully ingested and indexed by Splunk, confirming visibility across both local and SIEM layers.
+spl
+Copy
+Edit
+index=main sourcetype="XmlWinEventLog:Microsoft-Windows-Sysmon/Operational" "notepad.exe"
+📌 Strategic Value
+This project shows how curated telemetry tuning enhances visibility without overwhelming analysts. It reflects enterprise SOC practices where raw audit verbosity is replaced by structured signal, enabling detection of:
 
-This demonstrates that SwiftOnSecurity’s config adds meaningful detection value and enhances response capability against stealthy attacker techniques.
+Obfuscated execution
 
-📌 Notes
-Future configurations may require validating other event types (e.g., file writes, registry, network) based on specific detection goals.
+LOLBins and native tool abuse
 
-Splunk setup and permissions must be consistently re-verified during config changes to avoid ingestion failure.
+Process chains supporting attack narratives
+
+Persistence attempts via scheduled tasks
+
+Reconnaissance and lateral movement indicators
+
+🧠 Skills Demonstrated
+Endpoint telemetry tuning and validation
+
+Splunk configuration and event ingestion
+
+Obfuscation detection strategy
+
+SIEM query design
+
+Host-level detection engineering
+
 
